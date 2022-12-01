@@ -1,17 +1,8 @@
 const text = await Deno.readTextFile("./Day1/input.txt")
 
-const items = text.split("\r\n")
-
-type CalorieCount = {
-    number: number
-}
-
-console.log(items.reduce((acc, item) => {
-    if (item.trim() === "") {
-        acc.push({} as CalorieCount)
-        return acc
-    } else {
-        const last = acc.pop()
-        return [...acc, {number: Number(last?.number ?? 0) + Number(item)}]
-    }
-}, [] as CalorieCount[]).sort((a,b) => a.number - b.number).pop()?.number)
+console.log(text.split("\r\n").reduce((acc, item) => {
+    item.trim() === ""
+        ? acc.push(0)
+        : acc.push((acc.pop() ?? 0 )+ Number(item))
+    return acc
+}, [] as number[]).sort((a,b) => a - b).pop())
