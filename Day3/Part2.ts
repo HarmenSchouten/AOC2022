@@ -56,4 +56,3 @@ while (true) {
     counter += 3
 }
 console.log("TOTAL", totalScore)
-
