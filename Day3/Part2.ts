@@ -52,7 +52,7 @@ while (true) {
     })
 
     const map = getMap();
-    totalScore += (isLowerCase(matchingItem) ? 0 : 26 + map.get(matchingItem!.toLowerCase()!)!)
+    totalScore += ((isLowerCase(matchingItem) ? 0 : 26) + map.get(matchingItem!.toLowerCase()!)!)
     counter += 3
 }
 console.log("TOTAL", totalScore)
