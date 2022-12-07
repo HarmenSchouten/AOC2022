@@ -2,185 +2,17 @@ const text = await Deno.readTextFile("./Day7/input.txt")
 const items = text.split("\r\n")
 
 type File = {
-    parent: Folder
+    parent: Directory
     name: string
     size: number
 }
 
-type Folder = {
+type Directory = {
     key: string,
     name: string
-    files: (File | Folder)[]
-    parent?: Folder
+    files: (File | Directory)[]
+    parent?: Directory
 }
-
-const structure = {} as Folder
-
-const folderTypeGuard = (file: any): file is Folder => {
-    if (file.files !== undefined && Array.isArray(file.files)) {
-        return true
-    } else {
-        return false
-    }
-}
-
-const fileTypeGuard = (file: any): file is File => {
-    if (file.size && typeof file.size === "number" && file.parent && folderTypeGuard(file.parent)) {
-        return true
-    } else {
-        return false
-    }
-}
-
-const addFolderToFolder = (folderKey: string, folder: Folder) => {
-    // Recursive function to update a folder in a folder
-    const updateFolder = (f: Folder) => {
-        if (f.key === folderKey) {
-            console.log("ADDING", folder, "parent", f)
-            f.files.push({...folder, parent: f} as Folder)
-            return true
-        } else {
-            for (const g of f.files) {
-                if (folderTypeGuard(g)) {
-                    if (updateFolder(g)) {
-                        return true
-                    }
-                }
-            }
-        }
-    }
-
-    updateFolder(structure)
-
-    return structure
-}
-
-const addFileToFolder = (folderKey: string, file: File) => {
-    // Recursive function to update a file in a folder
-    const updateFolder = (folder: Folder) => {
-        if (folder.key === folderKey) {
-            folder.files.push({...file, parent: folder} as File)
-            return true
-        } else {
-            for (const f of folder.files) {
-                if (folderTypeGuard(f)) {
-                    if (updateFolder(f)) {
-                        return true
-                    }
-                }
-            }
-        }
-    }
-
-    updateFolder(structure)
-
-    return structure
-}
-
-const findParentFolder = (folderKey: string) => {
-    
-    let key = ""
-    // Find a folder in a tree
-    const findFolder = (folder: Folder) => {
-        if (folder.key === folderKey) {
-            console.log(folder)
-            key = folder.parent!.key
-            return true
-        } else {
-            for (const f of folder.files) {
-                if (folderTypeGuard(f)) {
-                    if (findFolder(f)) {
-                        return true;
-                    }
-                }
-            }
-        }
-    }
-
-    const item = findFolder(structure)
-    console.log("PARENT", key, item)
-
-    return key
-}
-
-const findSubfolder = (folderKey: string, subfolderName:string) => {
-
-    let key = "";
-
-    const findFolder = (folder: Folder) => {
-
-        if (folder.key === folderKey) {
-            const item = folder.files.find(item => item.name === subfolderName)
-            if (item && folderTypeGuard(item)) {
-                console.log("ITEM", item, folderTypeGuard(item))
-                key = item.key
-                return true
-            }
-        }
-
-        for (const f of folder.files) {
-            if (folderTypeGuard(f)) {
-                if (folder.key === folderKey) {
-                    const item = folder.files.find(item => item.name === subfolderName)
-                    if (item && folderTypeGuard(item)) {
-                        console.log("ITEM", item, folderTypeGuard(item))
-                        key = item.key
-                        return true
-                    }
-                } else {
-                    if (findFolder(f)) {
-                        return true
-                    }
-                }
-            }
-        }
-    }
-
-    const folder = findFolder(structure)
-    console.log("2", folder, key, folderKey, subfolderName)
-    return key;
-}
-
-let currentDirKey = "";
-items.forEach(item => {
-    // Command
-    if (item.startsWith("$")) {
-        const [sign, cmd, dir] = item.split(" ");
-
-        switch (cmd) {
-            case "cd":
-                if (dir === "..") {
-                    currentDirKey = findParentFolder(currentDirKey);
-                } else {
-                    if (currentDirKey === "") {
-                        const key = window.crypto.randomUUID()
-                        structure.name = dir;
-                        structure.key = key;
-                        structure.files = [];
-                        currentDirKey = key
-                    } else {
-                        const subFolder = findSubfolder(currentDirKey, dir)!
-                        console.log("SUB", dir, subFolder)
-                        currentDirKey = subFolder!
-                    }
-                }
-                break;
-            case "ls": 
-                break;
-        }
-    } 
-    // Create Direcotry
-    else if (item.startsWith("dir")) {
-        const [dir, name] = item.split(" ");
-        console.log("ADD DIRECTORY", currentDirKey, name)
-        const struct = addFolderToFolder(currentDirKey, {name: name, files: [], key: window.crypto.randomUUID()} as Folder)
-    } 
-    // Create file
-    else {
-        const [size, name] = item.split(" ");
-        const struct = addFileToFolder(currentDirKey, {name, size: parseInt(size)} as File)
-    }
-});
 
 type FolderSize = {
     name: string
@@ -188,11 +20,136 @@ type FolderSize = {
     files?: (File | FolderSize)[]
 }
 
-const findDirectorySizes = (folder: Folder) => {
-    const findSize = (folder: Folder): FolderSize => {
+/**
+ * Setup the base structure
+ */
+const structure = {} as Directory
+
+/**
+ * Check if an object is of type Folder
+ * @param item The item to validate
+ * @returns A boolean whether this item is a folder or not
+ */
+const isFolder = (item: any): item is Directory => (item.files !== undefined && Array.isArray(item.files))
+
+/**
+ * Validate if an object is of type File
+ * @param item The item to validate
+ * @returns A boolean whether this item is a file or not
+ */
+const isFile = (item: any): item is File => (item.size && typeof item.size === 'number' && item.parent && isFolder(item.parent))
+
+/**
+ * Recursive function to add a directory to an existing parent directory
+ * @param directoryKey The parent directory
+ * @param directory The directory to add
+ * @returns Nada
+ */
+const createDirectory = (directoryKey: string, directory: Directory) => {
+    const createDir = (f: Directory) => {
+        if (f.key === directoryKey) {
+            f.files.push({...directory, parent: f} as Directory)
+            return true
+        } else {
+            for (const g of f.files) {
+                if (isFolder(g)) {
+                    if (createDir(g)) {
+                        return true
+                    }
+                }
+            }
+        }
+    }
+
+    createDir(structure)
+}
+
+/**
+ * Recursive function to create a file in a specified directory
+ * @param directoryKey The parent directory key
+ * @param file The file to create
+ * @returns Nada
+ */
+const createFile = (directoryKey: string, file: File) => {
+    const addFile = (directory: Directory) => {
+        if (directory.key === directoryKey) {
+            directory.files.push({...file, parent: directory} as File)
+            return true
+        } else {
+            for (const f of directory.files) {
+                if (isFolder(f)) {
+                    if (addFile(f)) {
+                        return true
+                    }
+                }
+            }
+        }
+    }
+
+    addFile(structure)
+}
+
+/**
+ * Get the key of the parent folder for a certain directory key
+ * @param directoryKey The dir key to look for
+ * @returns The key of the parent directory
+ */
+const findParent = (directoryKey: string) => {
+    const findFolder = (folder: Directory):string|undefined => {
+        if (folder.key === directoryKey) {
+            return folder.parent!.key
+        } else {
+            for (const f of folder.files) {
+                if (isFolder(f)) {
+                    if (findFolder(f)) {
+                        return findFolder(f)
+                    }
+                }
+            }
+        }
+    }
+
+    return findFolder(structure)
+}
+
+/**
+ * Find the key of a subdirectory
+ * @param folderKey The folderkey of the parent
+ * @param subfolderName The subdirectory name
+ * @returns The key of the subdirectory
+ */
+const findSubfolder = (folderKey: string, subfolderName:string) => {
+    const findFolder = (folder: Directory):string|undefined => {
+        if (folder.key === folderKey) {
+            const item = folder.files.find(item => item.name === subfolderName)
+            if (item && isFolder(item)) {
+                return item.key
+            }
+        } else {
+            for (const f of folder.files) {
+                if (isFolder(f)) {
+                    if (findFolder(f)) {
+                        return findFolder(f)
+                    }
+                }
+            }
+        }
+    }
+
+    return findFolder(structure);
+}
+
+/**
+ * Get for a certain directory structure the size of each directory
+ * using a recursive function
+ * @param directory The directory to get all the sizes for
+ * @returns A tree object with all directory sizes
+ */
+const getDirectorySizes = (directory: Directory) => {
+    const findSize = (dir: Directory): FolderSize => {
         let dirSize = 0;
-        const files = folder.files.map(file => {
-            if (folderTypeGuard(file)) {
+        const files = dir.files.map(file => {
+            if (isFolder(file)) {
                 const found = findSize(file)
                 dirSize += found.dirSize
                 return found
@@ -202,35 +159,82 @@ const findDirectorySizes = (folder: Folder) => {
             }
         })
 
-        return {name: folder.name, dirSize, files}
+        return {name: dir.name, dirSize, files}
     }
 
-    return findSize(folder)
+    return findSize(directory)
 }
 
-const findDirectoriesWithMaxSize = (folder: FolderSize, maxSize: number) => {
+/**
+ * Find all directories with a size that is smaller than the given size
+ * @param directory The directory in which to start looking
+ * @param maxSize The max size of the directory
+ * @returns An array with directories
+ */
+const findDirectoriesWithMaxSize = (directory: FolderSize, maxSize: number) => {
     const directories = [] as FolderSize[];
 
-    const findDirectories = (folder: FolderSize) => {
-        if (folder.dirSize <= maxSize) {
-            directories.push(folder)
+    const findDirectories = (dir: FolderSize) => {
+        if (dir.dirSize <= maxSize) {
+            directories.push(dir)
         } 
 
-        if (folder.files) {
-            folder.files.forEach(file => {
-                if (!fileTypeGuard(file)) {
+        if (dir.files) {
+            dir.files.forEach(file => {
+                if (!isFile(file)) {
                     findDirectories(file)
                 }
             })
         }
     }
 
-    findDirectories(folder)
+    findDirectories(directory)
 
     return directories
 }
 
-const dirSizes = findDirectorySizes(structure)
+/**
+ * Setup the directory structure
+ */
+let currentDirKey = "";
+items.forEach(item => {
+    if (item.startsWith("$")) {
+        const [_, cmd, dir] = item.split(" ");
+
+        switch (cmd) {
+            case "cd":
+                if (dir === "..") {
+                    currentDirKey = findParent(currentDirKey)!;
+                } else {
+                    if (currentDirKey === "") {
+                        const key = window.crypto.randomUUID()
+                        structure.name = dir;
+                        structure.key = key;
+                        structure.files = [];
+                        currentDirKey = key
+                    } else {
+                        currentDirKey = findSubfolder(currentDirKey, dir)!
+                    }
+                }
+                break;
+            case "ls":
+                // Irrelevant 
+                break;
+        }
+    } else if (item.startsWith("dir")) {
+        const [_, name] = item.split(" ");
+        createDirectory(currentDirKey, {name: name, files: [], key: window.crypto.randomUUID()} as Directory)
+    } else {
+        const [size, name] = item.split(" ");
+        createFile(currentDirKey, {name, size: parseInt(size)} as File)
+    }
+});
+
+// Get all directory sizes
+const dirSizes = getDirectorySizes(structure)
+
+// Find all directories with a size smaller than 100000
 const dirs = findDirectoriesWithMaxSize(dirSizes, 100000)
-console.log(dirs.map(dir => ({name: dir.name, size: dir.dirSize})))
+
+// Add up the directory sizes
 console.log(dirs.reduce((acc, item) => acc + item.dirSize, 0))
