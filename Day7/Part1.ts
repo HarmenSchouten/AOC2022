@@ -8,6 +8,7 @@ type File = {
 }
 
 type Folder = {
+    key: string,
     name: string
     files: (File | Folder)[]
     parent?: Folder
@@ -16,7 +17,7 @@ type Folder = {
 const structure = {} as Folder
 
 const folderTypeGuard = (file: any): file is Folder => {
-    if (file.files && Array.isArray(file.files)) {
+    if (file.files !== undefined && Array.isArray(file.files)) {
         return true
     } else {
         return false
@@ -31,11 +32,12 @@ const fileTypeGuard = (file: any): file is File => {
     }
 }
 
-const addFolderToFolder = (folderName: string, folder: Folder) => {
+const addFolderToFolder = (folderKey: string, folder: Folder) => {
     // Recursive function to update a folder in a folder
     const updateFolder = (f: Folder) => {
-        if (f.name === folderName) {
-            f.files.push({...folder, parent: f})
+        if (f.key === folderKey) {
+            console.log("ADDING", folder, "parent", f)
+            f.files.push({...folder, parent: f} as Folder)
             return true
         } else {
             for (const g of f.files) {
@@ -53,11 +55,11 @@ const addFolderToFolder = (folderName: string, folder: Folder) => {
     return structure
 }
 
-const addFileToFolder = (folderName: string, file: File | Folder) => {
+const addFileToFolder = (folderKey: string, file: File) => {
     // Recursive function to update a file in a folder
     const updateFolder = (folder: Folder) => {
-        if (folder.name === folderName) {
-            folder.files.push({...file, parent: folder})
+        if (folder.key === folderKey) {
+            folder.files.push({...file, parent: folder} as File)
             return true
         } else {
             for (const f of folder.files) {
@@ -75,59 +77,110 @@ const addFileToFolder = (folderName: string, file: File | Folder) => {
     return structure
 }
 
-const findParentFolder = (folderName: string) => {
-
-    console.log("NAME", folderName)
+const findParentFolder = (folderKey: string) => {
     
+    let key = ""
     // Find a folder in a tree
     const findFolder = (folder: Folder) => {
-        for (const f of folder.files) {
-            if (folderTypeGuard(f)) {
-                if (f.name === folderName) {
-                    return folder
-                } else {
-                    return findFolder(f)
+        if (folder.key === folderKey) {
+            console.log(folder)
+            key = folder.parent!.key
+            return true
+        } else {
+            for (const f of folder.files) {
+                if (folderTypeGuard(f)) {
+                    if (findFolder(f)) {
+                        return true;
+                    }
                 }
             }
         }
     }
 
-    return findFolder(structure)
+    const item = findFolder(structure)
+    console.log("PARENT", key, item)
+
+    return key
 }
 
-let currentDirName = "";
+const findSubfolder = (folderKey: string, subfolderName:string) => {
+
+    let key = "";
+
+    const findFolder = (folder: Folder) => {
+
+        if (folder.key === folderKey) {
+            const item = folder.files.find(item => item.name === subfolderName)
+            if (item && folderTypeGuard(item)) {
+                console.log("ITEM", item, folderTypeGuard(item))
+                key = item.key
+                return true
+            }
+        }
+
+        for (const f of folder.files) {
+            if (folderTypeGuard(f)) {
+                if (folder.key === folderKey) {
+                    const item = folder.files.find(item => item.name === subfolderName)
+                    if (item && folderTypeGuard(item)) {
+                        console.log("ITEM", item, folderTypeGuard(item))
+                        key = item.key
+                        return true
+                    }
+                } else {
+                    if (findFolder(f)) {
+                        return true
+                    }
+                }
+            }
+        }
+    }
+
+    const folder = findFolder(structure)
+    console.log("2", folder, key, folderKey, subfolderName)
+    return key;
+}
+
+let currentDirKey = "";
 items.forEach(item => {
+    // Command
     if (item.startsWith("$")) {
         const [sign, cmd, dir] = item.split(" ");
 
         switch (cmd) {
             case "cd":
                 if (dir === "..") {
-                    console.log(currentDirName)
-                    currentDirName = findParentFolder(currentDirName)?.name ?? "/"
+                    currentDirKey = findParentFolder(currentDirKey);
                 } else {
-                    if (currentDirName === "") {
+                    if (currentDirKey === "") {
+                        const key = window.crypto.randomUUID()
                         structure.name = dir;
+                        structure.key = key;
                         structure.files = [];
+                        currentDirKey = key
                     } else {
-                        addFolderToFolder(currentDirName, {name: dir, files: []})
+                        const subFolder = findSubfolder(currentDirKey, dir)!
+                        console.log("SUB", dir, subFolder)
+                        currentDirKey = subFolder!
                     }
-                    currentDirName = dir;
                 }
                 break;
             case "ls": 
                 break;
         }
-    } else if (item.startsWith("dir")) {
+    } 
+    // Create Direcotry
+    else if (item.startsWith("dir")) {
         const [dir, name] = item.split(" ");
-        //addFolderToFolder(currentDirName, {name, files: []} as Folder)
-    } else {
+        console.log("ADD DIRECTORY", currentDirKey, name)
+        const struct = addFolderToFolder(currentDirKey, {name: name, files: [], key: window.crypto.randomUUID()} as Folder)
+    } 
+    // Create file
+    else {
         const [size, name] = item.split(" ");
-        addFileToFolder(currentDirName, {name, size: parseInt(size)} as File)
+        const struct = addFileToFolder(currentDirKey, {name, size: parseInt(size)} as File)
     }
 });
-
-//console.log(structure)
 
 type FolderSize = {
     name: string
@@ -136,7 +189,6 @@ type FolderSize = {
 }
 
 const findDirectorySizes = (folder: Folder) => {
-
     const findSize = (folder: Folder): FolderSize => {
         let dirSize = 0;
         const files = folder.files.map(file => {
@@ -178,9 +230,7 @@ const findDirectoriesWithMaxSize = (folder: FolderSize, maxSize: number) => {
     return directories
 }
 
-// console.log(structure)
-
 const dirSizes = findDirectorySizes(structure)
 const dirs = findDirectoriesWithMaxSize(dirSizes, 100000)
-console.log(dirs)
-console.log(dirs.reduce((acc, item) => acc += item.dirSize, 0))
+console.log(dirs.map(dir => ({name: dir.name, size: dir.dirSize})))
+console.log(dirs.reduce((acc, item) => acc + item.dirSize, 0))
