@@ -15,9 +15,9 @@ const grid = items
         if (acc.cycleCounter === (acc.regX - 1) || 
             acc.cycleCounter === (acc.regX + 1) || 
             acc.cycleCounter === acc.regX) {
-                acc.line[acc.cycleCounter]= "#"
+                acc.line[acc.cycleCounter] = "#"
         } else {
-            acc.line[acc.cycleCounter]= "."
+            acc.line[acc.cycleCounter] = "."
         }
 
         // Increase cycle counter
