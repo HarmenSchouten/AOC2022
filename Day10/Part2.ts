@@ -24,7 +24,7 @@ const grid = items
         acc.cycleCounter++
 
         // On line break, add line to total and reset line
-        if (acc.cycleCounter % 40 === 0 && acc.cycleCounter !== 0) {
+        if (acc.cycleCounter % 40 === 0) {
             acc.totals.push(acc.line)
             acc.line = []
             acc.cycleCounter = 0
