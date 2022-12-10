@@ -11,69 +11,64 @@ let tail = {x: 0, y: 0} as Coord
 
 const visitedCoord = [] as Coord[]
 
-const updateCoord = (coord: Coord, direction: string, distance: number, count?:boolean) => {
+const updateCoord = (coord: Coord, direction: string) => {
     switch (direction) {
         case "R":
-            coord.x += distance
+            coord.x += 1
             break;
         case "L":
-            coord.x -= distance
+            coord.x -= 1
             break;
         case "U":
-            coord.y += distance
+            coord.y += 1
             break;
         case "D":
-            coord.y -= distance
+            coord.y -= 1
             break;
-    }
-
-    if (count) {
-        visitedCoord.push({...coord})
     }
 
     return coord
 }
 
+const adjacents = (coord: Coord) => [
+    {x: coord.x + 1, y: coord.y},
+    {x: coord.x - 1, y: coord.y},
+    {x: coord.x, y: coord.y + 1},
+    {x: coord.x, y: coord.y - 1},
+    {x: coord.x + 1, y: coord.y + 1},
+    {x: coord.x - 1, y: coord.y - 1},
+    {x: coord.x - 1, y: coord.y + 1},
+    {x: coord.x + 1, y: coord.y - 1}
+]
+
 items
     .map(line => line.split(" "))
-    .reduce((acc, curr) => {
-        console.log(curr)
-        const [direction, distance] = curr
-
+    .reduce((acc, [direction, distance]) => {
         for (let i = 1; i <= Number(distance); i++) {
-            head = updateCoord(head, direction, 1)
+            head = updateCoord(head, direction)
 
-            if ((head.x - tail.x == 1 && head.y === tail.y) || 
-            (head.x - tail.x == -1 && head.y === tail.y) || 
-            (head.y - tail.y == 1 && head.x === tail.x) || 
-            (head.y - tail.y == -1 && head.x === tail.x) ||
-            (head.x - tail.x === 1 && head.y - tail.y === 1) ||
-            (head.x - tail.x === -1 && head.y - tail.y === -1) ||
-            (head.x - tail.x === -1 && head.y - tail.y === 1) ||
-            (head.x - tail.x === 1 && head.y - tail.y === -1)) {
-                continue;
-            } else if (head.x - tail.x == 2 && head.y === tail.y) {
-                tail = updateCoord(tail, "R", 1, true)
-            } else if (head.x - tail.x == -2 && head.y === tail.y) {
-                tail = updateCoord(tail, "L", 1, true)
-            } else if (head.y - tail.y == 2 && head.x === tail.x) {
-                tail = updateCoord(tail, "U", 1, true)
-            } else if (tail.y - head.y == 2 && head.x === tail.x) {
-                tail = updateCoord(tail, "D", 1, true)
-            } else {
-                if (head.x < tail.x) {
-                    console.log("L")
-                    tail = updateCoord(tail, "L", 1, false)
-                }
-                if (head.x > tail.x) {
-                    tail = updateCoord(tail, "R", 1, false)
-                }
-                if (head.y < tail.y) {
-                    tail = updateCoord(tail, "D", 1, false)
-                }
-                if (head.y > tail.y) {
-                    console.log("U")
-                    tail = updateCoord(tail, "U", 1, false)
+            if (!adjacents(head).some(adj => adj.x === tail.x && adj.y === tail.y)) {
+                if (head.x - tail.x == 2 && head.y === tail.y) {
+                    tail = updateCoord(tail, direction)
+                } else if (head.x - tail.x == -2 && head.y === tail.y) {
+                    tail = updateCoord(tail, direction)
+                } else if (head.y - tail.y == 2 && head.x === tail.x) {
+                    tail = updateCoord(tail, direction)
+                } else if (tail.y - head.y == 2 && head.x === tail.x) {
+                    tail = updateCoord(tail, direction)
+                } else {
+                    if (head.x < tail.x) {
+                        tail = updateCoord(tail, "L")
+                    }
+                    if (head.x > tail.x) {
+                        tail = updateCoord(tail, "R")
+                    }
+                    if (head.y < tail.y) {
+                        tail = updateCoord(tail, "D")
+                    }
+                    if (head.y > tail.y) {
+                        tail = updateCoord(tail, "U")
+                    }
                 }
                 visitedCoord.push({...tail})
             }
@@ -81,6 +76,5 @@ items
 
         return acc
 }, 0)
-
 
 console.log(visitedCoord.filter((item,index) => visitedCoord.findIndex(i => item.x === i.x && item.y === i.y) === index).length + 1)

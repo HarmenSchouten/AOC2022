@@ -6,84 +6,79 @@ type Coord = {
     y: number
 }
 
-const coords = [{x: 0, y: 0}, {x: 0, y: 0},{x: 0, y: 0}, {x: 0, y: 0},{x: 0, y: 0}, {x: 0, y: 0},{x: 0, y: 0}, {x: 0, y: 0},{x: 0, y: 0}, {x: 0, y: 0}]
+const coords = [] as Coord[]
+
+[...Array(10).keys()].forEach(_ => coords.push({x: 0, y: 0}))
 
 const visitedCoord = [{x: 0, y: 0}] as Coord[]
 
-const updateCoord = (coord: Coord, direction: string, distance: number, count?:boolean) => {
+const updateCoord = (coord: Coord, direction: string) => {
     switch (direction) {
         case "R":
-            coord.x += distance
+            coord.x += 1
             break;
         case "L":
-            coord.x -= distance
+            coord.x -= 1
             break;
         case "U":
-            coord.y += distance
+            coord.y += 1
             break;
         case "D":
-            coord.y -= distance
+            coord.y -= 1
             break;
-    }
-
-    if (count) {
-        visitedCoord.push({...coord})
     }
 
     return coord
 }
 
+const adjacents = (coord: Coord) => [
+    {x: coord.x + 1, y: coord.y},
+    {x: coord.x - 1, y: coord.y},
+    {x: coord.x, y: coord.y + 1},
+    {x: coord.x, y: coord.y - 1},
+    {x: coord.x + 1, y: coord.y + 1},
+    {x: coord.x - 1, y: coord.y - 1},
+    {x: coord.x - 1, y: coord.y + 1},
+    {x: coord.x + 1, y: coord.y - 1}
+]
+
 items
     .map(line => line.split(" "))
-    .reduce((acc, curr) => {
-        console.log(curr)
-        const [direction, distance] = curr
-
+    .reduce((acc, [direction, distance]) => {
         for (let i = 1; i <= Number(distance); i++) {
-
             for (let j = 0; j < coords.length - 1; j++) {
                 const h = coords[j]
                 const t = coords[j + 1]
 
                 if (j === 0) {
-
-                    coords.splice(j, 1, updateCoord(h, direction, 1))
+                    coords.splice(j, 1, updateCoord(h, direction))
                 }
 
-                if ((h.x - t.x == 1 && h.y === t.y) || 
-                (h.x - t.x == -1 && h.y === t.y) || 
-                (h.y - t.y == 1 && h.x === t.x) || 
-                (h.y - t.y == -1 && h.x === t.x) ||
-                (h.x - t.x === 1 && h.y - t.y === 1) ||
-                (h.x - t.x === -1 && h.y - t.y === -1) ||
-                (h.x - t.x === -1 && h.y - t.y === 1) ||
-                (h.x - t.x === 1 && h.y - t.y === -1)) {
-    
-                } else if (h.x - t.x == 2 && h.y === t.y) {
-                    coords.splice(j+1, 1, updateCoord(t, "R", 1, (j + 1 === coords.length -1)))
-                } else if (h.x - t.x == -2 && h.y === t.y) {
-                    coords.splice(j+1, 1, updateCoord(t, "L", 1, (j + 1 === coords.length -1)))
-                } else if (h.y - t.y == 2 && h.x === t.x) {
-                    coords.splice(j+1, 1, updateCoord(t, "U", 1, (j + 1 === coords.length -1)))
-                } else if (t.y - h.y == 2 && h.x === t.x) {
-                    coords.splice(j+1, 1, updateCoord(t, "D", 1, (j + 1 === coords.length -1)))
-                } else {
-                    if (h.x < t.x) {
-                        coords.splice(j+1, 1, updateCoord(t, "L", 1, false))
+                if (!adjacents(h).some(adj => adj.x === t.x && adj.y === t.y)) {
+                    if (h.x - t.x == 2 && h.y === t.y) {
+                        coords.splice(j+1, 1, updateCoord(t, "R"))
+                    } else if (h.x - t.x == -2 && h.y === t.y) {
+                        coords.splice(j+1, 1, updateCoord(t, "L"))
+                    } else if (h.y - t.y == 2 && h.x === t.x) {
+                        coords.splice(j+1, 1, updateCoord(t, "U"))
+                    } else if (t.y - h.y == 2 && h.x === t.x) {
+                        coords.splice(j+1, 1, updateCoord(t, "D"))
+                    } else {
+                        if (h.x < t.x) {
+                            coords.splice(j+1, 1, updateCoord(t, "L"))
+                        }
+                        if (h.x > t.x) {
+                            coords.splice(j+1, 1, updateCoord(t, "R"))
+                        }
+                        if (h.y < t.y) {
+                            coords.splice(j+1, 1, updateCoord(t, "D"))
+                        }
+                        if (h.y > t.y) {
+                            coords.splice(j+1, 1, updateCoord(t, "U"))
+                        }
                     }
-                    if (h.x > t.x) {
-                        coords.splice(j+1, 1, updateCoord(t, "R", 1, false))
-                    }
-                    if (h.y < t.y) {
-                        coords.splice(j+1, 1, updateCoord(t, "D", 1, false))
-                    }
-                    if (h.y > t.y) {
-                        coords.splice(j+1, 1, updateCoord(t, "U", 1, false))
-                    }
-
-                    if (j + 1 === coords.length -1) {
+                    if ((j + 1) === coords.length -1) {
                         visitedCoord.push({...t})
-
                     }
                 }
             }
@@ -91,6 +86,5 @@ items
 
         return acc
 }, 0)
-
 
 console.log(visitedCoord.filter((item,index) => visitedCoord.findIndex(i => item.x === i.x && item.y === i.y) === index).length)
