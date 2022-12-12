@@ -55,9 +55,18 @@ const getLowest = (map:Record<string, number>) => {
         queue = map
     
         return lowestItem    
-    } 
+    }
     return undefined
+}
 
+const getString = (value:string) => {
+    if (value === "S") {
+        return "a"
+    }
+    if (value === "E") {
+        return "z"
+    }
+    return value
 }
 
 const start = findStart()!
@@ -88,13 +97,8 @@ while (true) {
     const adjacent = neighbours(point.x, point.y)
     adjacent.forEach(item => {
         const gridItem = hasItem(item.x, item.y, grid)
-        const stringItem = gridItem === "S"
-            ? "a"
-            : gridItem === 'E'
-                ? 'z'
-                : gridItem
         if (gridItem) {
-            if (alphabet.indexOf(stringItem) - alphabet.indexOf(grid[point.y][point.x]) <= 1) {
+            if (alphabet.indexOf(getString(gridItem)) - alphabet.indexOf(grid[point.y][point.x]) <= 1) {
                 const totalRisk = riskMap[`${point.x}.${point.y}`] + 1
                 if (totalRisk < (riskMap[`${item.x}.${item.y}`] ?? Number.MAX_SAFE_INTEGER)) {
                     riskMap[`${item.x}.${item.y}`] = totalRisk
