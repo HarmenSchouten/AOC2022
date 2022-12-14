@@ -22,19 +22,16 @@ const cave = items.reduce((acc, coords) => {
                 acc.push({x: coords[x][0] + i, y: coords[x][1], val: "#"})
             }
         }
-
         if (yDiff > 0) {
             for (let i = 0; i < yDiff; i++) {
                 acc.push({x: next[0], y: coords[x][1] + i, val: "#"})
             }
         }
-
         if (xDiff < 0) {
             for (let i = 0; i > xDiff; i--) {
                 acc.push({x: coords[x][0] + i, y: coords[x][1], val: "#"})
             }
         }
-
         if (yDiff < 0) {
             for (let i = 0; i > yDiff; i--) {
                 acc.push({x: next[0], y: coords[x][1] + i, val: "#"})
@@ -83,7 +80,6 @@ while (true) {
         }
     }
     if (sandUnit.y <= maxCoords.y) {
-        //console.log(sandUnit)
         cave.push(sandUnit)
         sandCounter += 1
     } else {
@@ -105,6 +101,5 @@ for(let j = 0; j <= maxCoords.y + 1; j++) {
     }
     caveChars.push("\r\n")
 }
-
 
 console.log(caveChars.join(""))

@@ -22,19 +22,16 @@ const cave = items.reduce((acc, coords) => {
                 acc.push({x: coords[x][0] + i, y: coords[x][1], val: "#"})
             }
         }
-
         if (yDiff > 0) {
             for (let i = 0; i < yDiff; i++) {
                 acc.push({x: next[0], y: coords[x][1] + i, val: "#"})
             }
         }
-
         if (xDiff < 0) {
             for (let i = 0; i > xDiff; i--) {
                 acc.push({x: coords[x][0] + i, y: coords[x][1], val: "#"})
             }
         }
-
         if (yDiff < 0) {
             for (let i = 0; i > yDiff; i--) {
                 acc.push({x: next[0], y: coords[x][1] + i, val: "#"})
@@ -85,15 +82,12 @@ while (true) {
         }
     }
     if (sandUnit.y <= (maxCoords.y + 2) && !(sandUnit.x === sandOrigin.x && sandUnit.y === sandOrigin.y)) {
-        //console.log(sandUnit)
         cave.push(sandUnit)
         sandCounter += 1
     } else {
         break;
     }
 }
-// { x: 460, y: 13 } { x: 529, y: 170 }
-
 console.log(sandCounter + 1)
 
 const x1 = cave.map(item => item.x);
