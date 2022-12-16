@@ -1,12 +1,12 @@
 const text = await Deno.readTextFile("./Day16/input.txt")
 const items = text.split("\r\n")
-type Line = {
+type Room = {
     name: string
     rate: number
     tunnels: string[]
 }
 
-const lines = items
+const rooms = items
     .map((line) => line.split(";"))
     .map(([lineA, lineB]) => {
         const [name, rate] = lineA.split(" has flow rate=")
@@ -19,37 +19,107 @@ const lines = items
             name: name.slice(-2),
             rate: parseInt(rate),
             tunnels,
-        } as Line
+        } as Room
     })
 
-const sorted = [...lines].sort((a, b) => b.rate - a.rate)
+const destRooms = rooms.filter(line => line.rate != 0)
 
-console.log(sorted)
+const findPathToValves = (start: Room, destRooms: Room[], rooms: Room[]) => {
+    const visitedRooms = [] as string[]
+    const toVisit = [start] as Room[]
+    const lowestCost = {
+        [start.name]: 0	
+    } as Record<string, number>
 
-type OpenValve = {
+    let curr:Room | undefined;
+    while ((curr = toVisit.shift())) {
+        if (visitedRooms.includes(curr.name)) {
+            continue;
+        }
+
+        const neighbours = curr.tunnels
+            .filter(t => !visitedRooms.includes(t))
+            .map(t => rooms.find(r => r.name === t)!)
+
+        toVisit.push(...neighbours)
+
+        neighbours.forEach(room => {
+                const newCost = lowestCost[curr!.name] + 1
+                const neighbourCost = lowestCost[room!.name] ?? newCost
+                if (newCost <= neighbourCost) {
+                    lowestCost[room!.name] = newCost
+                }
+            });
+
+        visitedRooms.push(curr.name)
+    }
+
+    return destRooms.reduce((acc, room) => {
+        return {
+            ...acc,
+            [room.name]: lowestCost[room.name]
+        }
+    }, {} as Record<string, number>)
+}
+
+const costMap:Record<string, Record<string, number>> = rooms.reduce((acc, line) => {
+    return {
+        ...acc,
+        [line.name]: findPathToValves(line, destRooms.filter(v => v.name !== line.name), rooms)
+    }
+}, {} as Record<string, Record<string, number>>);
+
+console.log(costMap)
+
+type WalkedPath = {
     name: string
-    rate: number
-    minutes: number
+    toVisit: string[]
+    remainingTime: number,
+    isFinished: boolean
+    steps: string[]
+    pressure: number
 }
 
-const openValves = [] as OpenValve[]
-let currentValve = lines.find((_, index) => index === 0)!
-const minutes = 10;
+const maxPressure = (destinationRooms:Room[], allRooms:Room[]) => {
+    const maxTime = 30;
+    const paths = [{
+        name: "AA",
+        toVisit: destinationRooms.map(r => r.name),
+        remainingTime: maxTime,
+        isFinished: false,
+        steps: [],
+        pressure: 0
+    }] as WalkedPath[]
 
-const findPath = (currentValve: Line, targetValve: Line) => {
-    let valves = [] as string[];
-    if (currentValve.name === targetValve.name) {
-        return valves
+    for (let i = 0; i < paths.length; i++) {
+        const currPath = paths[i]
+        if (currPath.remainingTime <= 0 || currPath.isFinished) {
+            currPath.isFinished = true
+            continue;
+        }
+
+        const costs = costMap[currPath.name]
+        let madeNewPath = false
+        currPath.toVisit
+            .filter(room => room !== currPath.name && (currPath.remainingTime - costs[room]) > 1)
+            .forEach(room => {
+                madeNewPath = true
+                paths.push({
+                    name: room,
+                    toVisit: currPath.toVisit.filter(r => r !== room),
+                    remainingTime: currPath.remainingTime - costs[room] - 1,
+                    isFinished: false,
+                    steps: [...currPath.steps, room],
+                    pressure: currPath.pressure + (currPath.remainingTime - costs[room] - 1) * (allRooms.find(r => r.name === room)!.rate)
+                })
+            })
+        
+        if (!madeNewPath) {
+            currPath.isFinished = true
+        }
     }
+
+    return paths.filter(path => path.isFinished).sort((a, b) => b.pressure - a.pressure)[0].pressure
 }
 
-for (let i = 1; i <= minutes; i++){
-    console.log(currentValve.name)
-    if (currentValve.rate > 0) {
-        openValves.push({name: currentValve.name, rate: currentValve.rate, minutes: minutes - i})
-        continue;
-    }
-
-    const nextValve = lines.filter(line => openValves.some(ov => ov.name === line.name)).find(line => line.name === currentValve.tunnels[0])
-    currentValve = nextValve!
-}
+console.log(maxPressure(destRooms, rooms))
