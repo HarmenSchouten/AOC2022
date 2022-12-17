@@ -3,6 +3,7 @@ const jets = [...text.split("\r\n")[0]]
 
 const width = 7;
 const margin = 3;
+const startX = 2;
 
 const rocks = [
     ["####"],                       // MINUS        
@@ -60,9 +61,8 @@ let chamber = [] as string[][]
 for (let i = 0; i < 2022; i++) {
     const rock = rocks[i % 5];
     
-
-    const x = 2;
-    const y = chamber.length + 3
+    const x = startX;
+    const y = chamber.length + margin
     chamber = dropRock(chamber, rock, x, y)
 }
 
