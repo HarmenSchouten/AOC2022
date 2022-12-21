@@ -93,10 +93,12 @@ const caveChars = [] as string[]
 for(let j = 0; j <= maxCoords.y + 1; j++) {
     for(let i = minCoords.x-1; i <= maxCoords.x + 1; i++){
         const item = cave.find(item => (item.x == i) && (item.y == j))
-        if (item) {
-            caveChars.push(item.val)
+        if (item?.val == "#") {
+            caveChars.push(`\x1b[31m${item.val}`)
+        } else if (item?.val == "o") {
+            caveChars.push(`\x1b[33m${item.val}`)
         } else {
-            caveChars.push(".")
+            caveChars.push("\x1b[30m.")
         }
     }
     caveChars.push("\r\n")
