@@ -119,4 +119,4 @@ for(let j = 0; j <= maxCoords1.y + 1; j++) {
 }
 
 
-console.log(caveChars.join(""), "color:yellow")
+console.log(caveChars.join(""))
