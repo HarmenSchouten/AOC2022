@@ -12,14 +12,14 @@ const items = text
         return acc
     }, {} as Record<string, (string|number)[]>)
 
-// This is a very naive slow solution, but it works :)
-// 27277ms on my machine (i7-7700HQ)
+const visitedKeys = new Set<string>()
 while(items["root"].length > 1) {
-    Object.keys(items).forEach((item) => {
+    Object.keys(items).filter(item => !visitedKeys.has(item)).forEach((item) => {
         if (items[item].length === 1) {
             const keyVal = Object.keys(items).find(key => Array.isArray(items[key]) && items[key].includes(item))
             if (keyVal && items[keyVal]) {
                 items[keyVal].splice(items[keyVal].indexOf(item), 1, items[item][0])!
+                visitedKeys.add(item)
             }
         } else {
             try {
