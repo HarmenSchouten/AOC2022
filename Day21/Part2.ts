@@ -13,19 +13,30 @@ const itemsCopy = text
     }, {} as Record<string, (string|number)[]>)
 
 itemsCopy["root"].splice(1,1, "=")
-let counter = 0;
+let counter = 1;
+let increment = 100000000000;
 
-// This is a very naive slow solution, but it works :) for the sample input only ;(
-// Gotta find a smarter approach, but not doing it today
+// I like this solution. With the logging of the final root values, it's fun
+// to see how the code progresses
 while(true) {
+
+    // Increase the counter
+    counter += increment;
+
+    // Get a copy of the items
     const items = JSON.parse(JSON.stringify(itemsCopy))
+    
+    // Update the human field
     items["humn"] = [counter]
+
+    const visitedKeys = new Set<string>()
     while(typeof items["root"][0] !== "number" && typeof items["root"][1] !== "number") {	
-        Object.keys(items).forEach((item) => {
+        Object.keys(items).filter(item => !visitedKeys.has(item)).forEach((item) => {
             if (items[item].length === 1) {
                 const keyVal = Object.keys(items).find(key => Array.isArray(items[key]) && items[key].includes(item))
                 if (keyVal && items[keyVal]) {
                     items[keyVal].splice(items[keyVal].indexOf(item), 1, items[item][0])!
+                    visitedKeys.add(item)
                 }
             } else {
                 try {
@@ -35,14 +46,22 @@ while(true) {
                     // Don't warn me, I know what I'm doing
                 }
             }
+
         })
     }
-    
-    if (items["root"][0] === items["root"][2]) {
+
+    const n1 = items["root"][0]
+    const n2 = items["root"][2]
+
+    console.log(`%cLeft: ${n1} %cRight: ${n2}`, "color:yellow", "color:purple")
+
+    if (n1 == n2) {
         break;
-    } else {
-        counter++
+    } else if (n1 < n2) {
+        counter -= increment;
+        increment /= 10;
+        console.log(`Overshot. Reducing increment to ${increment}`);
     }
 }
 
-console.log(counter)
+console.log(`%cNumber to yell: ${counter}`, "color:green")
