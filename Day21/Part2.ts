@@ -30,7 +30,7 @@ while(true) {
     items["humn"] = [counter]
 
     const visitedKeys = new Set<string>()
-    while(typeof items["root"][0] !== "number" && typeof items["root"][1] !== "number") {	
+    while(typeof items["root"][0] !== "number") {	
         Object.keys(items).filter(item => !visitedKeys.has(item)).forEach((item) => {
             if (items[item].length === 1) {
                 const keyVal = Object.keys(items).find(key => Array.isArray(items[key]) && items[key].includes(item))
