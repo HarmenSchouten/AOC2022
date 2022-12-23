@@ -8,26 +8,14 @@ type ElveCoord = {
 }
 
 const GetElvesCoords = (items: string[][]) => {
-    return items.reduce((acc, line, y) => 
-    [
+    return items.reduce((acc, line, y) => [
         ...acc, 
         ...line
             .reduce((acc, item, x) =>
                 item === "#" 
-                    ? [
-                        ...acc, 
-                        { 
-                            x: x,
-                            y: y,
-                            directions: [
-                                isClearNorth,
-                                isClearSouth,
-                                isClearWest,
-                                isClearEast
-                            ]
-                        } as ElveCoord]
-                    : acc
-                , [] as ElveCoord[])
+                    ? [...acc, {x: x, y: y, directions: [isClearNorth, isClearSouth, isClearWest, isClearEast]} as ElveCoord]
+                : acc
+            , [] as ElveCoord[])
     ], [] as ElveCoord[])
 }
 
@@ -61,6 +49,11 @@ const isClearEast = (items:string[][], x:number, y:number) => {
     return isClear(e) && isClear(ne) && isClear(se) && {x: x + 1, y: y}
 }
 
+const shiftElveDirectionFunction = (elve: ElveCoord) => {
+    const fns = elve.directions.splice(0, 1)
+    elve.directions.push(...fns)
+}
+
 const getElveProposal = (items:string[][], elve: ElveCoord):{x:number, y:number} => {
     const nw = items?.[elve.y - 1]?.[elve.x - 1]
     const n = items?.[elve.y - 1]?.[elve.x]
@@ -72,8 +65,7 @@ const getElveProposal = (items:string[][], elve: ElveCoord):{x:number, y:number}
     const e = items?.[elve.y]?.[elve.x + 1]
 
     if (isClear(nw) && isClear(n) && isClear(w) && isClear(ne) && isClear(e) && isClear(sw) && isClear(s) && isClear(se)) {
-        const fns = elve.directions.splice(0, 1)
-        elve.directions.push(...fns)
+        shiftElveDirectionFunction(elve)
         return {
             x: elve.x,
             y: elve.y
@@ -88,15 +80,10 @@ const getElveProposal = (items:string[][], elve: ElveCoord):{x:number, y:number}
     if (directionIndex !== -1) {
         const directionFn = elve.directions[directionIndex]
         const proposal = directionFn(items, elve.x, elve.y) as {x:number, y:number}
-
-        const fns = elve.directions.splice(0, 1)
-        elve.directions.push(...fns)
-    
+        shiftElveDirectionFunction(elve)
         return proposal
     } else {
-        const fns = elve.directions.splice(0, 1)
-        elve.directions.push(...fns)
-
+        shiftElveDirectionFunction(elve)
         return {
             x: elve.x,
             y: elve.y
@@ -143,8 +130,6 @@ const round = (items:string[][], elves:ElveCoord[]) => {
     return items
 }
 
-console.log(items.length, items[0].length)
-
 let itemsCopy = JSON.parse(JSON.stringify(items)) as string[][]
 
 for (let i = 0; i < 10; i++) {
@@ -169,6 +154,4 @@ const numberOfEmptyFields = itemsCopy.reduce((acc, line, y) => {
 }, 0)
 
 itemsCopy.map(item => console.log(item.join(""))).join("")
-
-console.log(itemsCopy.length, itemsCopy[0].length)
 console.log(numberOfEmptyFields)
