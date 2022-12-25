@@ -19,41 +19,52 @@ const blueprints = text
         }, {} as Record<Resource, BotRequirements>)
     )
 
-const search = (
-    oreBotReq: BotRequirements, 
-    clayBotReq: BotRequirements, 
-    obsidianBotReq: BotRequirements, 
-    geodeBotReq: BotRequirements, 
-    remainingMinutes:number) => {
+const search = (oreBotReq: BotRequirements, clayBotReq: BotRequirements, obsidianBotReq: BotRequirements, geodeBotReq: BotRequirements, minutesLeft: number) => {
+    let best = -Infinity;
+    const seen = new Set();
 
-        let bestScore = -Number.MAX_SAFE_INTEGER;
-        const seen = new Set();
+    const stack = [[0, 0, 0, 0, 1, 0, 0, 0, minutesLeft]]
+    while (stack.length) {
+        const next = stack.pop()!;
+        let [ore, clay, obsidian, geode, oreRobots, clayRobots, obsidianRobots, geodeRobots, minutesLeft] = next;
 
-        const stack = [[0, 0, 0, 0, 1, 0, 0, 0, remainingMinutes]]
-        while (stack.length) {
-            const next = stack.pop()!;
-            let [ore, clay, obsidian, geode, oreRobots, clayRobots, obsidianRobots, geodeRobots, minutes] = next;
+        best = Math.max(best, geode)
+        if (minutesLeft === 0) continue;
 
-            bestScore = Math.max(bestScore, geode)
 
-            if (remainingMinutes === 0) continue;
+        const maxOreCost = Math.max(oreBotReq.ore, clayBotReq.ore, obsidianBotReq.ore, geodeBotReq.ore);
 
-            const maxOreCost = Math.max(oreBotReq.ore, clayBotReq.ore, obsidianBotReq.ore, geodeBotReq.ore)
+        oreRobots = Math.min(oreRobots, maxOreCost)
+        ore = Math.min(ore, minutesLeft * maxOreCost - oreRobots * (minutesLeft - 1))
 
-            oreRobots = Math.min(oreRobots, maxOreCost)
-            ore = Math.min(ore, remainingMinutes * maxOreCost - oreRobots * (minutes - 1))
+        clayRobots = Math.min(clayRobots, obsidianBotReq.clay)
+        clay = Math.min(clay, minutesLeft * obsidianBotReq.clay - clayRobots * (minutesLeft - 1))
 
-            clayRobots = Math.min(clayRobots, obsidianBotReq.clay)
-            clay = Math.min(clay, remainingMinutes * obsidianBotReq.clay - clayRobots * (minutes - 1))
+        geodeRobots = Math.min(geodeRobots, geodeBotReq.obsidian)
+        obsidian = Math.min(obsidian, minutesLeft * geodeBotReq.obsidian - geodeRobots * (minutesLeft - 1))
 
-            geodeRobots = Math.min(geodeRobots, geodeBotReq.geode)
-            geode = Math.min(geode, remainingMinutes * geodeBotReq.geode - geodeRobots * (minutes - 1))
 
-            // Assemble a key
-            const key = [ore, clay, obsidian, geode, oreRobots, clayRobots, obsidianRobots, geodeRobots, minutes].join(',')
+        const key = [ore, clay, obsidian, geode, oreRobots, clayRobots, obsidianRobots, geodeRobots, minutesLeft].join(',');
+        if (seen.has(key)) continue;
+        seen.add(key);
+        const newMinutes = minutesLeft - 1;
+        const [newOre, newClay, newObsidian, newGeode] = [ore + oreRobots, clay + clayRobots, obsidian + obsidianRobots, geode + geodeRobots]
+        stack.push([newOre, newClay, newObsidian, newGeode, oreRobots, clayRobots, obsidianRobots, geodeRobots, newMinutes])
+        if (ore >= geodeBotReq.ore && obsidian >= geodeBotReq.obsidian) {
+            stack.push([newOre - geodeBotReq.ore, newClay, newObsidian - geodeBotReq.obsidian, newGeode, oreRobots, clayRobots, obsidianRobots, geodeRobots + 1, newMinutes])
         }
-    
-    return 0;
+        else if (ore >= obsidianBotReq.ore && clay >= obsidianBotReq.clay) {
+            stack.push([newOre - obsidianBotReq.ore, newClay - obsidianBotReq.clay, newObsidian, newGeode, oreRobots, clayRobots, obsidianRobots + 1, geodeRobots, newMinutes])
+        } else {
+            if (ore >= clayBotReq.ore) {
+                stack.push([newOre - clayBotReq.ore, newClay, newObsidian, newGeode, oreRobots, clayRobots + 1, obsidianRobots, geodeRobots, newMinutes])
+            }
+            if (ore >= oreBotReq.ore) {
+                stack.push([newOre - oreBotReq.ore, newClay, newObsidian, newGeode, oreRobots + 1, clayRobots, obsidianRobots, geodeRobots, newMinutes])
+            }
+        }
+    }
+    return best;
 }
 
 const answer = blueprints.reduce((acc, blueprint, i) => {
