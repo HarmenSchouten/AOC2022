@@ -67,7 +67,7 @@ const search = (oreBotReq: BotRequirements, clayBotReq: BotRequirements, obsidia
     return best;
 }
 
-const answer = blueprints.slice(0, 3).reduce((acc, blueprint, i) => {
+const answer = blueprints.slice(0, 3).reduce((acc, blueprint) => {
     // Get the max geode count
     return acc * search(blueprint.ore, blueprint.clay, blueprint.obsidian, blueprint.geode, 32)
 }, 1)
