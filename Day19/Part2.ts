@@ -31,7 +31,6 @@ const search = (oreBotReq: BotRequirements, clayBotReq: BotRequirements, obsidia
         best = Math.max(best, geode)
         if (minutesLeft === 0) continue;
 
-
         const maxOreCost = Math.max(oreBotReq.ore, clayBotReq.ore, obsidianBotReq.ore, geodeBotReq.ore);
 
         oreRobots = Math.min(oreRobots, maxOreCost)
