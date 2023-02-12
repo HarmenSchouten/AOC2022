@@ -1,4 +1,4 @@
-module Part1 =
+module Part2 =
 
     let splitLines (s:string) =
         List.ofSeq(s.Split([|'\n'|]))
@@ -12,5 +12,6 @@ module Part1 =
             else
                 List.updateAt (state.Length - 1) (state.Item (state.Length - 1) + (element |> int)) state
             ) [0]
-        |> List.sort
-        |> List.last
+        |> List.sortDescending
+        |> List.take(3)
+        |> List.reduce(fun state element -> state + element)
