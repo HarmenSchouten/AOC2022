@@ -21,66 +21,53 @@ const doStep = (map: typeof ogMap):typeof ogMap => {
     blizzards.forEach(b => {
         const options = [...b.char]
         options.forEach(option => {
+            let nextPosition = {} as typeof startNode;
             switch (option) {
                 case "<":
                     {
-                        let nextPosition = mapCopy.find(item => item.x === b.x - 1 && item.y === b.y)!
+                        nextPosition = mapCopy.find(item => item.x === b.x - 1 && item.y === b.y)!
                         if (!nextPosition.isField) {
                             const lastIndex = mapCopy.findLastIndex(item => item.x === lineLength - 1 && item.y === nextPosition.y)
                             nextPosition = mapCopy[lastIndex]!
-                        }
-                        if (nextPosition.char === ".") {
-                            nextPosition.char = "<"
-                        } else {
-                            nextPosition.char = nextPosition.char + option
                         }
                         break;
                     }
                 case ">": 
                     {
-                        let nextPosition = mapCopy.find(item => item.x === b.x + 1 && item.y === b.y)!
+                        nextPosition = mapCopy.find(item => item.x === b.x + 1 && item.y === b.y)!
 
                         if (!nextPosition.isField) {
                             const firstIndex = mapCopy.findIndex(item => item.x === 1 && item.y === nextPosition.y)
                             nextPosition = mapCopy[firstIndex]!
                         }
-                        if (nextPosition.char === ".") {
-                            nextPosition.char = ">"
-                        } else {
-                            nextPosition.char = nextPosition?.char + option
-                        }
                         break;
                     }
                 case "^": 
                     {
-                        let nextPosition = mapCopy.find(item => item.x === b.x && item.y === b.y - 1)!
+                        nextPosition = mapCopy.find(item => item.x === b.x && item.y === b.y - 1)!
 
                         if (!nextPosition.isField) {
                             const lastIndex = mapCopy.findLastIndex(item => item.x === nextPosition.x && item.isField)
                             nextPosition = mapCopy[lastIndex]!
                         }
-                        if (nextPosition.char === ".") {
-                            nextPosition.char = "^"
-                        } else {
-                            nextPosition.char = nextPosition.char + option
-                        }
                         break;
                     }
                 case "v": 
                     {
-                        let nextPosition = mapCopy.find(item => item.x === b.x && item.y === b.y + 1)!
+                        nextPosition = mapCopy.find(item => item.x === b.x && item.y === b.y + 1)!
 
                         if (!nextPosition.isField) {
                             const lastIndex = mapCopy.findIndex(item => item.x === nextPosition.x && item.isField)
                             nextPosition = mapCopy[lastIndex]!
                         }
-                        if (nextPosition.char === ".") {
-                            nextPosition.char = "v"
-                        } else {
-                            nextPosition.char = nextPosition.char + option
-                        }
                         break;
                     }
+            }
+
+            if (nextPosition.char === ".") {
+                nextPosition.char = option
+            } else {
+                nextPosition.char = nextPosition.char + option
             }
         })
     })
@@ -135,6 +122,6 @@ const doRun = (mapp: typeof ogMap, stepStart: number, start: typeof startNode, e
 
 const {map:map1, steps} = doRun(ogMap, 0, startNode, endNode)
 const {map:map2, steps:steps2} = doRun(map1, steps, endNode, startNode)
-const {map:_, steps:steps3} = doRun(map2, steps2, startNode, endNode)
+const {map:_, steps:answer} = doRun(map2, steps2, startNode, endNode)
 
-console.log("Steps", steps3)
+console.log("Steps", answer)
